@@ -32,7 +32,6 @@ blackjackApp.onReceive = function (event, payload) {
         } else if (buttonContent == "Reset") {
             console.log("resetting game")
         } 
-        console.log(payload.node);
     }
 };
 
@@ -44,6 +43,8 @@ var playerCash = 250;
 var currentBet = 10;
 var dealerFirstCard = true;
 var isGameOver = false;
+var playerNodes = [];
+var dealerNodes = [];
 // Famo.us variables
 var dealerCard1 = blackjackApp.addChild();
 var dealerCard2 = blackjackApp.addChild();
@@ -172,28 +173,36 @@ function dealGame() {
     viewPlayerCard(blackjackApp, playerHand[0])
     viewPlayerCard(blackjackApp, playerHand[1])
     viewDealerCard(blackjackApp);
-    viewDealerCard(blackjackApp);
 }
 dealGame();
 
-function viewDealerCard(node) {
+function viewDealerCard(node,revealAll) {
     var imgSrc = './images/cards/playing-card-back.png';
-    if (dealerFirstCard == true) {
-        imgSrc = './images/cards/' + constructImageName(dealerHand[0]);
-        dealerFirstCard = false;
+    for (var d=0;d<dealerHand.length;d++) {
+        if (revealAll == true) {
+            imgSrc = './images/cards/' + constructImageName(dealerHand[d]);
+        } else {
+            if (dealerFirstCard == true) {
+                imgSrc = './images/cards/' + constructImageName(dealerHand[d]);
+                dealerFirstCard = false;
+            } else {
+                imgSrc = './images/cards/playing-card-back.png';
+            }
+        }
+        var dealerCard = node.addChild()
+            .setProportionalSize(cardXSize, cardYSize)
+            .setAlign(dealerLeftAlign, 0.2)
+            .setMountPoint(0, 0.5);
+        new DOMElement(dealerCard, {
+        tagName: 'img',
+        properties: {
+            zIndex: cardZIndex
+        }
+        })
+        .setAttribute('src', imgSrc);
+        dealerNodes.push(dealerCard);
+        dealerLeftAlign += .1;
     }
-    var dealerCard = node.addChild()
-        .setProportionalSize(cardXSize, cardYSize)
-        .setAlign(dealerLeftAlign, 0.2)
-        .setMountPoint(0, 0.5);
-    new DOMElement(dealerCard, {
-    tagName: 'img',
-    properties: {
-        zIndex: cardZIndex
-    }
-    })
-    .setAttribute('src', imgSrc);
-    dealerLeftAlign += .1;
 }
 
 function dealerSequence() {
@@ -211,6 +220,40 @@ function dealerSequence() {
 
 function dealerHit() {
     dealerHand.push(dealLastCard(deckArray));
+    viewDealerCard(blackjackApp, false)
+    if (handTotalValue(dealerHand) > 21) {
+        console.log("DEALER BUST");
+        gameOver("dealer bust");
+        isGameOver = true;
+    }
+}
+
+function cardNodesEqual(card1,card2) {
+    if (card1 == null || card2 == null) {
+        return false;
+    }
+    if (card1._id == card2._id) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function removeDealerCards() {
+    for (var i=0;i<dealerNodes.length;i++) {
+        for (var c=0;c<blackjackApp._children.length;c++) {
+            if (cardNodesEqual(blackjackApp._children[c], dealerNodes[i])) {
+                blackjackApp.removeChild(blackjackApp._children[c])
+                dealerNodes.splice(i,1)
+            }
+        }
+    }
+    dealerLeftAlign = .22;
+}
+
+function revealDealerCards() {
+    removeDealerCards();
+    viewDealerCard(blackjackApp,true)
 }
 
 function playerHit() {
@@ -243,12 +286,25 @@ function viewPlayerCard(node,card) {
     }
     })
     .setAttribute('src', imgSrc);
+    playerNodes.push(playerCard);
     playerLeftAlign += .1;
-    console.log("blackjackApp:check nodes",blackjackApp)
+    console.log("blackjackApp:check nodes",blackjackApp, playerCard, playerNodes);
 }
 
 function playerStay() {
-
+    dealerSequence();
+    revealDealerCards();
+    if (isGameOver != true) {
+        if (handTotalValue(dealerHand) > handTotalValue(playerHand)) {
+            console.log(handTotalValue(dealerHand),handTotalValue(playerHand))
+            gameOver("dealer wins");
+        } else if (handTotalValue(dealerHand) < handTotalValue(playerHand)) {
+            console.log(handTotalValue(dealerHand),handTotalValue(playerHand))
+            gameOver("player wins");
+        } else {
+            gameOver("push");
+        }
+    }
 }
 
 function gameOver(result) {
@@ -256,11 +312,19 @@ function gameOver(result) {
         playerCash -= currentBet;
         resetBoard();
         currentCash._components[2].setContent('$' + playerCash);
-        messageDisplay._components[2].setContent("BUST");
+        messageDisplay._components[2].setContent("Player Bust");
         // clear card nodes
     } else if (result == "dealer bust") {
+        messageDisplay._components[2].setContent("Dealer Bust");
         playerCash += currentBet;
+        currentCash._components[2].setContent('$' + playerCash);
         resetBoard();
+    } else if (result == "player wins") {
+        messageDisplay._components[2].setContent("Player Wins");
+    } else if (result == "dealer wins") {
+        messageDisplay._components[2].setContent("Dealer Wins");
+    } else if (result == "push") {
+        messageDisplay._components[2].setContent("Push");
     }
 }
 
@@ -360,6 +424,7 @@ new DOMElement(stayButton, {
 });
 
 hitButton.addUIEvent('click');
+stayButton.addUIEvent('click');
 
 new DOMElement(currentCash, {
     content: '$' + playerCash,
