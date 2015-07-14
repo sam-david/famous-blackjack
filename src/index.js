@@ -21,16 +21,21 @@ blackjackApp.onReceive = function (event, payload) {
         var buttonContent = payload.node._components[2]._content;
         // get the id of the nav button
         // var to = payload.node.getId();
-        console.log(payload.node._components[2]._content)
         if (buttonContent == "Hit") {
-            playerHit();
+            if (isGameOver === false) {
+                playerHit();
+            }
         } else if (buttonContent == "Stay") {
-            console.log("Player stays")
-            playerStay();
+            if (isGameOver === false) {
+                console.log("Player stays")
+                playerStay();
+            }
         } else if (buttonContent == "Deal") {
             console.log("dealing cards now")
+            resetGame();
         } else if (buttonContent == "Reset") {
             console.log("resetting game")
+            resetGame();
         } 
     }
 };
@@ -101,7 +106,7 @@ function createDeckArray() {
         deckArray.push(new Card(i,"S"))
     }
 }
-createDeckArray();
+
 function shuffleDeck(deck) {
     return Underscore.shuffle(deck); 
 }
@@ -117,6 +122,17 @@ function aceIndex(hand) {
         if (hand[i].value == 1) {index = i;}
     }
     return index;
+}
+
+function cardNodesEqual(card1,card2) {
+    if (card1 == null || card2 == null) {
+        return false;
+    }
+    if (card1._id == card2._id) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 function constructImageName(card) {
@@ -136,8 +152,6 @@ function constructImageName(card) {
 }
 
 function handTotalValue(hand) {
-    // var oneIndex = aceIndex(dealerHand);
-    // if (oneIndex != 0) {dealerHand[oneIndex].value = 11;console.log("soft")}
     var lowValue = 0;
     var highValue = 0;
     var firstAce = false;
@@ -151,7 +165,7 @@ function handTotalValue(hand) {
             highValue += hand[c].value;
         }
     }
-    console.log("Low:",lowValue,"High:",highValue)
+    // console.log("Low:",lowValue,"High:",highValue)
     if (lowValue <= 21 && highValue > 21) {
         return lowValue
     } else {
@@ -159,22 +173,27 @@ function handTotalValue(hand) {
     }
 }
 
-function dealGame() {
-    console.log(deckArray)
+function initializeGame() {
+    // shuffle before dealing out for first time
+    resetDeck();
+    dealGame();    
+}
+
+function resetDeck() {
+    deckArray = [];
+    createDeckArray();
     deckArray = shuffleDeck(deckArray);
-    console.log(deckArray)
-    // deal out initial 2 cards
+}
 
+function dealGame() {
     dealerHand.push(dealLastCard(deckArray))
     playerHand.push(dealLastCard(deckArray))
     dealerHand.push(dealLastCard(deckArray))
     playerHand.push(dealLastCard(deckArray))
-
     viewPlayerCard(blackjackApp, playerHand[0])
     viewPlayerCard(blackjackApp, playerHand[1])
     viewDealerCard(blackjackApp);
 }
-dealGame();
 
 function viewDealerCard(node,revealAll) {
     var imgSrc = './images/cards/playing-card-back.png';
@@ -224,20 +243,10 @@ function dealerHit() {
     if (handTotalValue(dealerHand) > 21) {
         console.log("DEALER BUST");
         gameOver("dealer bust");
-        isGameOver = true;
     }
 }
 
-function cardNodesEqual(card1,card2) {
-    if (card1 == null || card2 == null) {
-        return false;
-    }
-    if (card1._id == card2._id) {
-        return true;
-    } else {
-        return false;
-    }
-}
+
 
 function removeDealerCards() {
     for (var i=0;i<dealerNodes.length;i++) {
@@ -256,25 +265,31 @@ function revealDealerCards() {
     viewDealerCard(blackjackApp,true)
 }
 
-function playerHit() {
-    // check if game is over, disabling button
-    if (isGameOver == false) {
-        playerHand.push(dealLastCard(deckArray));
-        var lastIndex = playerHand.length - 1;
-        viewPlayerCard(blackjackApp, playerHand[lastIndex]);
-        if (handTotalValue(playerHand) > 21) {
-            console.log("BUST!")
-            gameOver("player bust");
-            isGameOver = true;
+function removePlayerCards() {
+    for (var i=0;i<playerNodes.length;i++) {
+        for (var c=0;c<blackjackApp._children.length;c++) {
+            if (cardNodesEqual(blackjackApp._children[c], playerNodes[i])) {
+                blackjackApp.removeChild(blackjackApp._children[c])
+            }
         }
-        console.log("total value",handTotalValue(playerHand));
+    }
+    playerLeftAlign = .22;
+    playerNodes = [];
+    playerHand = [];
+}
+
+function playerHit() {
+    playerHand.push(dealLastCard(deckArray));
+    var lastIndex = playerHand.length - 1;
+    viewPlayerCard(blackjackApp, playerHand[lastIndex]);
+    if (handTotalValue(playerHand) > 21) {
+        console.log("BUST!")
+        gameOver("player bust");
     }
 }
 
 function viewPlayerCard(node,card) {
-    console.log(card);
     var imgSrc = './images/cards/' + constructImageName(card);
-    console.log(imgSrc);
     var playerCard = node.addChild()
         .setProportionalSize(cardXSize, cardYSize)
         .setAlign(playerLeftAlign, 0.7)
@@ -288,7 +303,6 @@ function viewPlayerCard(node,card) {
     .setAttribute('src', imgSrc);
     playerNodes.push(playerCard);
     playerLeftAlign += .1;
-    console.log("blackjackApp:check nodes",blackjackApp, playerCard, playerNodes);
 }
 
 function playerStay() {
@@ -296,10 +310,8 @@ function playerStay() {
     revealDealerCards();
     if (isGameOver != true) {
         if (handTotalValue(dealerHand) > handTotalValue(playerHand)) {
-            console.log(handTotalValue(dealerHand),handTotalValue(playerHand))
             gameOver("dealer wins");
         } else if (handTotalValue(dealerHand) < handTotalValue(playerHand)) {
-            console.log(handTotalValue(dealerHand),handTotalValue(playerHand))
             gameOver("player wins");
         } else {
             gameOver("push");
@@ -310,15 +322,10 @@ function playerStay() {
 function gameOver(result) {
     if (result == "player bust") {
         playerCash -= currentBet;
-        resetBoard();
-        currentCash._components[2].setContent('$' + playerCash);
         messageDisplay._components[2].setContent("Player Bust");
-        // clear card nodes
     } else if (result == "dealer bust") {
         messageDisplay._components[2].setContent("Dealer Bust");
         playerCash += currentBet;
-        currentCash._components[2].setContent('$' + playerCash);
-        resetBoard();
     } else if (result == "player wins") {
         messageDisplay._components[2].setContent("Player Wins");
     } else if (result == "dealer wins") {
@@ -326,10 +333,20 @@ function gameOver(result) {
     } else if (result == "push") {
         messageDisplay._components[2].setContent("Push");
     }
+    currentCash._components[2].setContent('$' + playerCash);
+    isGameOver = true;
 }
 
 function resetBoard() {
-    console.log("blackjack children",blackjackApp.children)
+}
+
+function resetGame() {
+    removeDealerCards();
+    removePlayerCards();
+    resetDeck(); //possibly change later so deck is continuous 
+    isGameOver = false;
+    dealerHand = [];
+    dealGame();
 }
 
 new DOMElement(dealer, {
@@ -425,6 +442,8 @@ new DOMElement(stayButton, {
 
 hitButton.addUIEvent('click');
 stayButton.addUIEvent('click');
+dealButton.addUIEvent('click');
+resetButton.addUIEvent('click');
 
 new DOMElement(currentCash, {
     content: '$' + playerCash,
@@ -473,3 +492,5 @@ dealButton.setProportionalSize(.1,.1)
 deck.setProportionalSize(.2,.4).setAlign(.8,.2);
 table.setProportionalSize(.8,.9).setAlign(.2,0);
 leftSidePanel.setProportionalSize(0.2, 0.9)
+
+initializeGame();
