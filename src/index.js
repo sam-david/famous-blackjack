@@ -45,13 +45,18 @@ blackjackApp.onReceive = function (event, payload) {
             resetGame();
         } else if (buttonContent == "↑") {
             console.log('increase bet');
-            currentBet++;
+            if (currentBet <= playerCash) {
+                console.log("go up")
+                currentBet++;
+            }
             currentBetDisplay._components[2].setContent('$'+currentBet);
         } else if (buttonContent == "↓") {
-            currentBet--;
+            if (currentBet > 1) {
+                currentBet--;
+            }
             currentBetDisplay._components[2].setContent('$'+currentBet);
         } else if (buttonContent == "Sam David 2015") {
-            window.open("http://www.google.com",'_blank');
+            window.open("http://sam-david.github.io/",'_blank');
         }
     }
 };
@@ -66,6 +71,7 @@ var dealerFirstCard = true;
 var isGameOver = false;
 var playerNodes = [];
 var dealerNodes = [];
+var playerBlackjack = false;
 // Famo.us variables
 var dealerCard1 = blackjackApp.addChild();
 var dealerCard2 = blackjackApp.addChild();
@@ -331,37 +337,67 @@ function dealGame() {
     playerHand.push(dealLastCard(deckArray))
     viewPlayerCard(blackjackApp, playerHand[0], true)
     viewPlayerCard(blackjackApp, playerHand[1], true)
-    viewDealerCard(blackjackApp);
+    viewDealerCard(blackjackApp, dealerHand[0]);
+    viewDealerCard(blackjackApp, dealerHand[1],true);
+    if (aceIndex(playerHand) != 0 && handTotalValue(playerHand) == 21) {
+        console.log("Blackjack!!!")
+        playerBlackjack = true;
+        dealerSequence();
+        if (handTotalValue(dealerHand) == handTotalValue(playerHand)) {
+            gameOver("push");
+        } else if (handTotalValue(dealerHand) < handTotalValue(playerHand)) {
+            console.log('gameover bj')
+            gameOver("player blackjack");
+        } 
+    } 
 }
 
-function viewDealerCard(node,revealAll) {
-    var imgSrc = './images/cards/playing-card-back.png';
-    for (var d=0;d<dealerHand.length;d++) {
-        if (revealAll == true) {
-            imgSrc = './images/cards/' + constructImageName(dealerHand[d]);
-        } else {
-            if (dealerFirstCard == true) {
-                imgSrc = './images/cards/' + constructImageName(dealerHand[d]);
-                dealerFirstCard = false;
-            } else {
-                imgSrc = './images/cards/playing-card-back.png';
-            }
-        }
-        var dealerCard = node.addChild()
-            .setProportionalSize(cardXSize, cardYSize)
-            .setAlign(.875, 0.4)
-            .setMountPoint(0, 0.5);
-        new DOMElement(dealerCard, {
-        tagName: 'img',
-        properties: {
-            zIndex: cardZIndex
-        }
-        })
-        .setAttribute('src', imgSrc);
-        var align = new Align(dealerCard).set(dealerLeftAlign,.2,cardZIndex,{duration:500})
-        dealerNodes.push(dealerCard);
-        dealerLeftAlign += .1;
+function viewPlayerCard(node,card,showTransition) {
+    var imgSrc = './images/cards/' + constructImageName(card);
+    var playerCard = node.addChild()
+        .setProportionalSize(cardXSize, cardYSize)
+        .setAlign(.875, 0.4)
+        .setMountPoint(0, 0.5);
+    new DOMElement(playerCard, {
+    tagName: 'img',
+    properties: {
+        zIndex: cardZIndex
     }
+    })
+    .setAttribute('src', imgSrc);
+    if (showTransition == true) {
+        new Align(playerCard).set(playerLeftAlign,.7,cardZIndex,{duration:500});
+        // var spinner = playerCard.addComponent({
+        //     onUpdate: function(time) {
+        //         playerCard.setRotation(0, time / 1000, 0);
+        //         playerCard.requestUpdateOnNextTick(spinner);
+        //     }
+        // });
+    }
+    playerNodes.push(playerCard);
+    playerLeftAlign += .1;
+}
+
+function viewDealerCard(node,card,isSecondCard) {
+    if (isSecondCard == true) {
+        var imgSrc = './images/cards/playing-card-back.png';
+    } else {
+        var imgSrc = './images/cards/' + constructImageName(card);
+    }
+    var dealerCard = node.addChild()
+        .setProportionalSize(cardXSize, cardYSize)
+        .setAlign(.875, 0.4)
+        .setMountPoint(0, 0.5);
+    new DOMElement(dealerCard, {
+    tagName: 'img',
+    properties: {
+        zIndex: cardZIndex
+    }
+    })
+    .setAttribute('src', imgSrc);
+    var align = new Align(dealerCard).set(dealerLeftAlign,.2,cardZIndex,{duration:500})
+    dealerNodes.push(dealerCard);
+    dealerLeftAlign += .1;
 }
 
 function dealerSequence() {
@@ -379,7 +415,7 @@ function dealerSequence() {
 
 function dealerHit() {
     dealerHand.push(dealLastCard(deckArray));
-    viewDealerCard(blackjackApp, false)
+    viewDealerCard(blackjackApp, dealerHand[dealerHand.length-1])
     if (handTotalValue(dealerHand) > 21) {
         console.log("DEALER BUST");
         gameOver("dealer bust");
@@ -400,9 +436,27 @@ function removeDealerCards() {
     dealerNodes = [];
 }
 
-function revealDealerCards() {
-    removeDealerCards();
-    viewDealerCard(blackjackApp,true)
+function revealSecondCard() {
+    console.log('revealing second dealer card',dealerHand[1])
+    var secondCardSrc = './images/cards/' + constructImageName(dealerHand[1])
+    var secondDealerCard = blackjackApp.addChild()
+        .setProportionalSize(cardXSize, cardYSize)
+        .setAlign(.32, 0.2)
+        .setMountPoint(0, 0.5);
+    new DOMElement(secondDealerCard, {
+    tagName: 'img',
+    properties: {
+        zIndex: cardZIndex
+    }
+    })
+    .setAttribute('src', secondCardSrc);
+    for (var i=0;i<blackjackApp._children.length;i++) {
+        if (blackjackApp._children[i] == dealerNodes[1]) {
+            console.log('removing card back', blackjackApp._children[i])
+            blackjackApp.removeChild(blackjackApp._children[i]);
+        }
+    }
+    dealerNodes.push(secondDealerCard);
 }
 
 function removePlayerCards() {
@@ -428,43 +482,15 @@ function playerHit() {
     }
 }
 
-function viewPlayerCard(node,card,showTransition) {
-    var imgSrc = './images/cards/' + constructImageName(card);
-    var playerCard = node.addChild()
-        .setProportionalSize(cardXSize, cardYSize)
-        .setAlign(.875, 0.4)
-        .setMountPoint(0, 0.5);
-    new DOMElement(playerCard, {
-    tagName: 'img',
-    properties: {
-        zIndex: cardZIndex
-    }
-    })
-    .setAttribute('src', imgSrc);
-    if (showTransition == true) {
-        new Align(playerCard).set(playerLeftAlign,.7,cardZIndex,{duration:500});
-        var spinner = playerCard.addComponent({
-            onUpdate: function(time) {
-                playerCard.setRotation(0, time / 1000, 0);
-                playerCard.requestUpdateOnNextTick(spinner);
-            }
-        });
-    }
-    playerNodes.push(playerCard);
-    playerLeftAlign += .1;
-}
 
 function playerStay() {
     dealerSequence();
-    revealDealerCards();
-    if (isGameOver != true) {
-        if (handTotalValue(dealerHand) > handTotalValue(playerHand)) {
-            gameOver("dealer wins");
-        } else if (handTotalValue(dealerHand) < handTotalValue(playerHand)) {
-            gameOver("player wins");
-        } else {
-            gameOver("push");
-        }
+    if (handTotalValue(dealerHand) > handTotalValue(playerHand) && handTotalValue(dealerHand) <= 21) {
+        gameOver("dealer wins");
+    } else if (handTotalValue(dealerHand) < handTotalValue(playerHand)) {
+        gameOver("player wins");
+    } else if (handTotalValue(dealerHand) == handTotalValue(playerHand)) {
+        gameOver("push");
     }
 }
 
@@ -473,17 +499,30 @@ function gameOver(result) {
         playerCash -= currentBet;
         messageDisplay._components[2].setContent("Player Bust");
     } else if (result == "dealer bust") {
-        messageDisplay._components[2].setContent("Dealer Bust");
-        playerCash += currentBet;
+        console.log(playerBlackjack)
+        if (playerBlackjack == false) {
+            messageDisplay._components[2].setContent("Dealer Bust");
+            playerCash += currentBet;
+        } else {
+            console.log('dealer bust on player blackjack');
+            messageDisplay._components[2].setContent("Blackjack!");
+        }
     } else if (result == "player wins") {
         messageDisplay._components[2].setContent("Player Wins");
         playerCash += currentBet;
     } else if (result == "dealer wins") {
         playerCash -= currentBet;
         messageDisplay._components[2].setContent("Dealer Wins");
+    } else if (result == "player blackjack") {
+        messageDisplay._components[2].setContent("Blackjack!");
     } else if (result == "push") {
         messageDisplay._components[2].setContent("Push");
     }
+    if (playerBlackjack == true) {
+        playerCash += currentBet * 1.5;
+        playerBlackjack = false;
+    }
+    revealSecondCard();
     currentCash._components[2].setContent('$' + playerCash);
     isGameOver = true;
     new Align(hitButton).set(1,1)
@@ -636,7 +675,7 @@ new DOMElement(messageDisplay, {
         'text-align': 'center',
         'padding-top': '1%',
         'padding-bottom': '1%',
-        'color': '#447343',
+        'color': '#614BF2',
         'border': 'solid #F2F2F2 2px',
         'font-size': '2rem',
         zIndex: 15
@@ -646,7 +685,7 @@ new DOMElement(messageDisplay, {
 new DOMElement(signature, {
     content: "Sam David 2015 ©",
     properties: {
-        'color': 'red',
+        'color': '#614BF2',
         'font-size': '.8rem',
         zIndex: 15
     }
