@@ -4,6 +4,13 @@
 var DOMElement = require('famous/dom-renderables/DOMElement');
 var Underscore = require('underscore');
 var FamousEngine = require('famous/core/FamousEngine');
+var Position = require('famous/components/Position');
+var Align = require('famous/components/Align');
+var Rotation = require('famous/components/Rotation');
+var Transitionable = require('famous/transitions/Transitionable');
+console.log(Transitionable);
+console.log(Position);
+console.log(Align);
 
 FamousEngine.init();
 
@@ -36,7 +43,16 @@ blackjackApp.onReceive = function (event, payload) {
         } else if (buttonContent == "Reset") {
             console.log("resetting game")
             resetGame();
-        } 
+        } else if (buttonContent == "↑") {
+            console.log('increase bet');
+            currentBet++;
+            currentBetDisplay._components[2].setContent('$'+currentBet);
+        } else if (buttonContent == "↓") {
+            currentBet--;
+            currentBetDisplay._components[2].setContent('$'+currentBet);
+        } else if (buttonContent == "Sam David 2015") {
+            window.open("http://www.google.com",'_blank');
+        }
     }
 };
 
@@ -68,16 +84,138 @@ var deck = blackjackApp.addChild();
 var dealButton = blackjackApp.addChild();
 var resetButton = blackjackApp.addChild();
 var hitButton = blackjackApp.addChild();
+var hitButtonXOrigin = 0;
+var hitButtonYOrigin = .4;
 var stayButton = blackjackApp.addChild();
+var stayButtonXOrigin = .1;
+var stayButtonYOrigin = .4;
 var currentCash = blackjackApp.addChild();
 var messageDisplay = blackjackApp.addChild();
+var balanceTitle = blackjackApp.addChild();
+var betTitle = blackjackApp.addChild();
+var betIncrease = blackjackApp.addChild();
+var betIncreaseXOrigin = 0;
+var betIncreaseYOrigin = .85;
+var betDecrease = blackjackApp.addChild();
+var betDecreaseXOrigin = .1;
+var betDecreaseYOrigin = .85;
+var currentBetDisplay = blackjackApp.addChild();
 var signature = blackjackApp.addChild();
+var gameTitle = blackjackApp.addChild();
+var famousTitle = blackjackApp.addChild();
+var rules = blackjackApp.addChild();
 var dealerLeftAlign = .22;
 var playerLeftAlign = .22;
 var cardZIndex = 10;
 var cardXSize = .08;
 var cardYSize = .2;
 
+new DOMElement(rules, {
+    content: 'Dealer draws to 16, Hits soft 17',
+    properties: {
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'white',
+        'font-size': '1.5em',
+        zIndex: 10
+    }
+});
+rules.setProportionalSize(.4,.1).setAlign(0.3,0.50);
+new DOMElement(gameTitle, {
+    content: 'Blackjack',
+    properties: {
+        'font-family': 'Limelight',
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'black',
+        'font-size': '3.5em',
+        zIndex: 6
+    }
+});
+gameTitle.setProportionalSize(.4,.1).setAlign(0.3,0.35);
+new DOMElement(famousTitle, {
+    content: 'Built with Famo.us Engine',
+    properties: {
+        'font-family': 'Limelight',
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'black',
+        'font-size': '1.2em',
+        zIndex: 10
+    }
+});
+famousTitle.setProportionalSize(.4,.1).setAlign(0.3,0.45);
+new DOMElement(balanceTitle, {
+    content: 'Balance:',
+    properties: {
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'black',
+        'font-size': '1.8em',
+        zIndex: 15
+    }
+});
+balanceTitle.setProportionalSize(.2,.1).setAlign(0,.58);
+new DOMElement(betTitle, {
+    content: 'Bet:',
+    properties: {
+        'text-align': 'right',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'black',
+        'font-size': '1.8em',
+        zIndex: 15
+    }
+});
+betTitle.setProportionalSize(.1,.1).setAlign(0,.75);
+new DOMElement(currentBetDisplay, {
+    content: '$' + currentBet,
+    properties: {
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': '#447343',
+        'font-size': '1.8em',
+        zIndex: 15
+    }
+});
+currentBetDisplay.setProportionalSize(.1,.1).setAlign(.1,.75);
+new DOMElement(betIncrease, {
+    content: '↑',
+    properties: {
+        'background-color': '#0D0D0D',
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': '#447343',
+        'border': 'solid #F2F2F2 3px',
+        'font-size': '2em',
+        'cursor': 'pointer',
+        zIndex: 15
+    }
+});
+betIncrease.setProportionalSize(.1,.1).setAlign(0,.85);
+betIncrease.addUIEvent('click');
+new DOMElement(betDecrease, {
+    content: '↓',
+    properties: {
+        'background-color': '#0D0D0D',
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': '#447343',
+        'border': 'solid #F2F2F2 3px',
+        'font-size': '2em',
+        'cursor': 'pointer',
+        zIndex: 15
+    }
+});
+betDecrease.setProportionalSize(.1,.1).setAlign(.1,.85);
+betDecrease.addUIEvent('click');
 // Constructor functions
 function Card(value,suit,face) {
     this.value = value;
@@ -175,6 +313,7 @@ function handTotalValue(hand) {
 
 function initializeGame() {
     // shuffle before dealing out for first time
+    messageDisplay._components[2].setContent("Hit or Stay?");
     resetDeck();
     dealGame();    
 }
@@ -190,8 +329,8 @@ function dealGame() {
     playerHand.push(dealLastCard(deckArray))
     dealerHand.push(dealLastCard(deckArray))
     playerHand.push(dealLastCard(deckArray))
-    viewPlayerCard(blackjackApp, playerHand[0])
-    viewPlayerCard(blackjackApp, playerHand[1])
+    viewPlayerCard(blackjackApp, playerHand[0], true)
+    viewPlayerCard(blackjackApp, playerHand[1], true)
     viewDealerCard(blackjackApp);
 }
 
@@ -210,7 +349,7 @@ function viewDealerCard(node,revealAll) {
         }
         var dealerCard = node.addChild()
             .setProportionalSize(cardXSize, cardYSize)
-            .setAlign(dealerLeftAlign, 0.2)
+            .setAlign(.875, 0.4)
             .setMountPoint(0, 0.5);
         new DOMElement(dealerCard, {
         tagName: 'img',
@@ -219,6 +358,7 @@ function viewDealerCard(node,revealAll) {
         }
         })
         .setAttribute('src', imgSrc);
+        var align = new Align(dealerCard).set(dealerLeftAlign,.2,cardZIndex,{duration:500})
         dealerNodes.push(dealerCard);
         dealerLeftAlign += .1;
     }
@@ -253,11 +393,11 @@ function removeDealerCards() {
         for (var c=0;c<blackjackApp._children.length;c++) {
             if (cardNodesEqual(blackjackApp._children[c], dealerNodes[i])) {
                 blackjackApp.removeChild(blackjackApp._children[c])
-                dealerNodes.splice(i,1)
             }
         }
     }
     dealerLeftAlign = .22;
+    dealerNodes = [];
 }
 
 function revealDealerCards() {
@@ -281,18 +421,18 @@ function removePlayerCards() {
 function playerHit() {
     playerHand.push(dealLastCard(deckArray));
     var lastIndex = playerHand.length - 1;
-    viewPlayerCard(blackjackApp, playerHand[lastIndex]);
+    viewPlayerCard(blackjackApp, playerHand[lastIndex], true);
     if (handTotalValue(playerHand) > 21) {
         console.log("BUST!")
         gameOver("player bust");
     }
 }
 
-function viewPlayerCard(node,card) {
+function viewPlayerCard(node,card,showTransition) {
     var imgSrc = './images/cards/' + constructImageName(card);
     var playerCard = node.addChild()
         .setProportionalSize(cardXSize, cardYSize)
-        .setAlign(playerLeftAlign, 0.7)
+        .setAlign(.875, 0.4)
         .setMountPoint(0, 0.5);
     new DOMElement(playerCard, {
     tagName: 'img',
@@ -301,6 +441,15 @@ function viewPlayerCard(node,card) {
     }
     })
     .setAttribute('src', imgSrc);
+    if (showTransition == true) {
+        new Align(playerCard).set(playerLeftAlign,.7,cardZIndex,{duration:500});
+        var spinner = playerCard.addComponent({
+            onUpdate: function(time) {
+                playerCard.setRotation(0, time / 1000, 0);
+                playerCard.requestUpdateOnNextTick(spinner);
+            }
+        });
+    }
     playerNodes.push(playerCard);
     playerLeftAlign += .1;
 }
@@ -328,24 +477,41 @@ function gameOver(result) {
         playerCash += currentBet;
     } else if (result == "player wins") {
         messageDisplay._components[2].setContent("Player Wins");
+        playerCash += currentBet;
     } else if (result == "dealer wins") {
+        playerCash -= currentBet;
         messageDisplay._components[2].setContent("Dealer Wins");
     } else if (result == "push") {
         messageDisplay._components[2].setContent("Push");
     }
     currentCash._components[2].setContent('$' + playerCash);
     isGameOver = true;
+    new Align(hitButton).set(1,1)
+    new Align(stayButton).set(1,1)
+    new Align(betIncrease).set(betIncreaseXOrigin,betIncreaseYOrigin)
+    new Align(betDecrease).set(betDecreaseXOrigin,betDecreaseYOrigin)
 }
 
 function resetBoard() {
 }
 
 function resetGame() {
+    //clear title
+    new Align(gameTitle).set(1,1,0)
+    new Align(famousTitle).set(1,1,0)
+    new Align(rules).set(1,1,0)
+    new Align(betIncrease).set(1,1,0)
+    new Align(betDecrease).set(1,1,0)
+    new Align(hitButton).set(hitButtonXOrigin,hitButtonYOrigin)
+    new Align(stayButton).set(stayButtonXOrigin,stayButtonYOrigin)
     removeDealerCards();
     removePlayerCards();
     resetDeck(); //possibly change later so deck is continuous 
     isGameOver = false;
+    dealerFirstCard = true;
+    messageDisplay._components[2].setContent("Hit or Stay?");
     dealerHand = [];
+
     dealGame();
 }
 
@@ -367,12 +533,16 @@ dealer
 // logo.requestUpdate(spinner);
 new DOMElement(leftSidePanel, {
     properties: {
-        'background-color': '#590202'
+        'background-color': '#590202',
+        'bottom-border': 'solid black 1px',
+        zIndex: 5
     }
 });
 new DOMElement(table, {
     properties: {
-        'background-color': '#355934'
+        'background-color': '#355934',
+        'bottom-border': 'solid black 1px',
+        zIndex: 5
     }
 });
 new DOMElement(deck, {
@@ -388,27 +558,27 @@ new DOMElement(dealButton, {
         'padding-top': '1%',
         'padding-bottom': '1%',
         'color': '#F2F2F2',
-        'font-size': '1.2rem',
-        'border': 'solid #F2F2F2 2px',
+        'font-size': '1.8rem',
+        'border': 'solid #F2F2F2 5px',
         'cursor': 'pointer',
         zIndex: 15
     }
 });
 
-new DOMElement(resetButton, {
-    content: "Reset Deck",
-    properties: {
-        'background-color': '#0D0D0D',
-        'text-align': 'center',
-        'padding-top': '1%',
-        'padding-bottom': '1%',
-        'color': '#F2F2F2',
-        'font-size': '1.2rem',
-        'border': 'solid #F2F2F2 2px',
-        'cursor': 'pointer',
-        zIndex: 15
-    }
-});
+// new DOMElement(resetButton, {
+//     content: "Reset Deck",
+//     properties: {
+//         'background-color': '#0D0D0D',
+//         'text-align': 'center',
+//         'padding-top': '1%',
+//         'padding-bottom': '1%',
+//         'color': '#F2F2F2',
+//         'font-size': '1.2rem',
+//         'border': 'solid #F2F2F2 2px',
+//         'cursor': 'pointer',
+//         zIndex: 15
+//     }
+// });
 
 new DOMElement(hitButton, {
     content: "Hit",
@@ -418,8 +588,8 @@ new DOMElement(hitButton, {
         'padding-top': '1%',
         'padding-bottom': '1%',
         'color': '#F2F2F2',
-        'font-size': '1.2rem',
-        'border': 'solid #F2F2F2 2px',
+        'font-size': '1.7rem',
+        'border': 'solid #F2F2F2 3px',
         'cursor': 'pointer',
         zIndex: 15
     }
@@ -433,8 +603,8 @@ new DOMElement(stayButton, {
         'padding-top': '1%',
         'padding-bottom': '1%',
         'color': '#F2F2F2', 
-        'font-size': '1.2rem',
-        'border': 'solid #F2F2F2 2px',
+        'font-size': '1.7rem',
+        'border': 'solid #F2F2F2 3px',
         'cursor': 'pointer',
         zIndex: 15
     }
@@ -443,7 +613,7 @@ new DOMElement(stayButton, {
 hitButton.addUIEvent('click');
 stayButton.addUIEvent('click');
 dealButton.addUIEvent('click');
-resetButton.addUIEvent('click');
+// resetButton.addUIEvent('click');
 
 new DOMElement(currentCash, {
     content: '$' + playerCash,
@@ -460,21 +630,21 @@ new DOMElement(currentCash, {
 });
 
 new DOMElement(messageDisplay, {
-    content: "Test",
+    content: "Click Deal",
     properties: {
         'background-color': '#0D0D0D',
         'text-align': 'center',
         'padding-top': '1%',
         'padding-bottom': '1%',
         'color': '#447343',
-        'border': 'solid #F2F2F2 3px',
+        'border': 'solid #F2F2F2 2px',
         'font-size': '2rem',
         zIndex: 15
     }
 });
 
 new DOMElement(signature, {
-    content: "Sam David 2015",
+    content: "Sam David 2015 ©",
     properties: {
         'color': 'red',
         'font-size': '.8rem',
@@ -482,15 +652,15 @@ new DOMElement(signature, {
     }
 });
 
-messageDisplay.setProportionalSize(.2,.1).setAlign(0,.4)
-currentCash.setProportionalSize(.2,.1).setAlign(0,.6);
-hitButton.setProportionalSize(.1,.1).setAlign(0,.80);
-signature.setAlign(.9,.93);
-stayButton.setProportionalSize(.1,.1).setAlign(.1,.8);
-resetButton.setProportionalSize(.1,.1).setAlign(.1,0);
-dealButton.setProportionalSize(.1,.1)
-deck.setProportionalSize(.2,.4).setAlign(.8,.2);
-table.setProportionalSize(.8,.9).setAlign(.2,0);
-leftSidePanel.setProportionalSize(0.2, 0.9)
+signature.addUIEvent('click')
 
-initializeGame();
+messageDisplay.setProportionalSize(.2,.1).setAlign(0,.3)
+currentCash.setProportionalSize(.2,.1).setAlign(0,.65);
+hitButton.setProportionalSize(.1,.1).setAlign(1,1);
+stayButton.setProportionalSize(.1,.1).setAlign(1,1);
+resetButton.setProportionalSize(.1,.1).setAlign(.1,0);
+dealButton.setProportionalSize(.2,.1)
+deck.setProportionalSize(.2,.4).setAlign(.8,.2);
+table.setProportionalSize(.8,.95).setAlign(.2,0);
+leftSidePanel.setProportionalSize(0.2, 0.95)
+signature.setAlign(.9,.965);
