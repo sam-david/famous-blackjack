@@ -140,8 +140,8 @@ function createDeckArray() {
 
 function preloadImages() {
     for (var i=2;i<=10;i++) {
-        cardImages['club' + i] = new Image();
-        cardImages['club' + i].src = 'images/cards/' + i + '_of_clubs.png'
+        cardImages['clubs' + i] = new Image();
+        cardImages['clubs' + i].src = 'images/cards/' + i + '_of_clubs.png'
         cardImages['diamonds' + i] = new Image();
         cardImages['diamonds' + i].src = 'images/cards/' + i + '_of_diamonds.png'
         cardImages['hearts' + i] = new Image();
@@ -149,8 +149,39 @@ function preloadImages() {
         cardImages['spades' + i] = new Image();
         cardImages['spades' + i].src = 'images/cards/' + i + '_of_spades.png'
     }
+    cardImages['clubsAce'] = new Image();
+    cardImages['clubsAce'].src = 'images/cards/ace_of_hearts.png';
+    cardImages['diamondsAce'] = new Image();
+    cardImages['diamondsAce'].src = 'images/cards/ace_of_diamonds.png';
+    cardImages['heartsAce'] = new Image();
+    cardImages['heartsAce'].src = 'images/cards/ace_of_hearts.png';
+    cardImages['spadesAce'] = new Image();
+    cardImages['spadesAce'].src = 'images/cards/ace_of_spades.png';
+    cardImages['clubsKing'] = new Image();
+    cardImages['clubsKing'].src = 'images/cards/king_of_hearts.png';
+    cardImages['diamondsKing'] = new Image();
+    cardImages['diamondsKing'].src = 'images/cards/king_of_diamonds.png';
     cardImages['heartsKing'] = new Image();
     cardImages['heartsKing'].src = 'images/cards/king_of_hearts.png';
+    cardImages['spadesKing'] = new Image();
+    cardImages['spadesKing'].src = 'images/cards/king_of_spades.png';
+    cardImages['clubsQueen'] = new Image();
+    cardImages['clubsQueen'].src = 'images/cards/queen_of_hearts.png';
+    cardImages['diamondsQueen'] = new Image();
+    cardImages['diamondsQueen'].src = 'images/cards/queen_of_diamonds.png';
+    cardImages['heartsQueen'] = new Image();
+    cardImages['heartsQueen'].src = 'images/cards/queen_of_hearts.png';
+    cardImages['spadesQueen'] = new Image();
+    cardImages['spadesQueen'].src = 'images/cards/queen_of_spades.png';
+    cardImages['clubsJack'] = new Image();
+    cardImages['clubsJack'].src = 'images/cards/jack_of_hearts.png';
+    cardImages['diamondsJack'] = new Image();
+    cardImages['diamondsJack'].src = 'images/cards/jack_of_diamonds.png';
+    cardImages['heartsJack'] = new Image();
+    cardImages['heartsJack'].src = 'images/cards/jack_of_hearts.png';
+    cardImages['spadesJack'] = new Image();
+    cardImages['spadesJack'].src = 'images/cards/jack_of_spades.png';
+
 }
 
 preloadImages()
@@ -186,17 +217,15 @@ function cardNodesEqual(card1,card2) {
 
 function constructImageName(card) {
     var finalName = "";
-    if (card.face == "K") {finalName += "king"}
-    else if (card.face == "Q") {finalName += "queen"}
-    else if (card.face == "J") {finalName += "jack"}
-    else if (card.value == 1) {finalName += "ace"}
-    else {finalName += card.value.toString()}
-    finalName += "_of_";
     if (card.suit == "H") {finalName += "hearts"}
     else if (card.suit == "D") {finalName += "diamonds"}
     else if (card.suit == "C") {finalName += "clubs"}
     else if (card.suit == "S") {finalName += "spades"}
-    finalName += ".png"
+    if (card.face == "K") {finalName += "King"}
+    else if (card.face == "Q") {finalName += "Queen"}
+    else if (card.face == "J") {finalName += "Jack"}
+    else if (card.value == 1) {finalName += "Ace"}
+    else {finalName += card.value.toString()}
     return finalName;
 }
 
@@ -258,7 +287,8 @@ function dealGame() {
 }
 
 function viewPlayerCard(node,card,showTransition) {
-    var imgSrc = './images/cards/' + constructImageName(card);
+    console.log('construct image',constructImageName(card),cardImages[constructImageName(card)])
+    var imgSrc = cardImages[constructImageName(card)].src;
     var playerCard = node.addChild()
         .setProportionalSize(cardXSize, cardYSize)
         .setAlign(.875, 0.4)
@@ -287,7 +317,8 @@ function viewDealerCard(node,card,isSecondCard) {
     if (isSecondCard == true) {
         var imgSrc = './images/cards/playing-card-back.png';
     } else {
-        var imgSrc = './images/cards/' + constructImageName(card);
+        console.log('construct image',constructImageName(card),cardImages[constructImageName(card)])
+        var imgSrc = cardImages[constructImageName(card)].src;
     }
     var dealerCard = node.addChild()
         .setProportionalSize(cardXSize, cardYSize)
@@ -343,7 +374,7 @@ function removeDealerCards() {
 
 function revealSecondCard() {
     console.log('revealing second dealer card',dealerHand[1])
-    var secondCardSrc = './images/cards/' + constructImageName(dealerHand[1])
+    var secondCardSrc = cardImages[constructImageName(dealerHand[1])].src
     var secondDealerCard = blackjackApp.addChild()
         .setProportionalSize(cardXSize, cardYSize)
         .setAlign(.32, 0.2)
