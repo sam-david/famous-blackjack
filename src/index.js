@@ -72,17 +72,8 @@ var isGameOver = false;
 var playerNodes = [];
 var dealerNodes = [];
 var playerBlackjack = false;
+var cardImages = {};
 // Famo.us variables
-var dealerCard1 = blackjackApp.addChild();
-var dealerCard2 = blackjackApp.addChild();
-var dealerCard3 = blackjackApp.addChild();
-var dealerCard4 = blackjackApp.addChild();
-var dealerCard5 = blackjackApp.addChild();
-var playerCard1 = blackjackApp.addChild();
-var playerCard2 = blackjackApp.addChild();
-var playerCard3 = blackjackApp.addChild();
-var playerCard4 = blackjackApp.addChild();
-var playerCard5 = blackjackApp.addChild();
 var dealer = blackjackApp.addChild();
 var leftSidePanel = blackjackApp.addChild();
 var table = blackjackApp.addChild();
@@ -110,118 +101,14 @@ var signature = blackjackApp.addChild();
 var gameTitle = blackjackApp.addChild();
 var famousTitle = blackjackApp.addChild();
 var rules = blackjackApp.addChild();
+var testImage = blackjackApp.addChild();
 var dealerLeftAlign = .22;
 var playerLeftAlign = .22;
 var cardZIndex = 10;
 var cardXSize = .08;
 var cardYSize = .2;
 
-new DOMElement(rules, {
-    content: 'Dealer draws to 16, Hits soft 17',
-    properties: {
-        'text-align': 'center',
-        'padding-top': '1%',
-        'padding-bottom': '1%',
-        'color': 'white',
-        'font-size': '1.5em',
-        zIndex: 10
-    }
-});
-rules.setProportionalSize(.4,.1).setAlign(0.3,0.50);
-new DOMElement(gameTitle, {
-    content: 'Blackjack',
-    properties: {
-        'font-family': 'Limelight',
-        'text-align': 'center',
-        'padding-top': '1%',
-        'padding-bottom': '1%',
-        'color': 'black',
-        'font-size': '3.5em',
-        zIndex: 6
-    }
-});
-gameTitle.setProportionalSize(.4,.1).setAlign(0.3,0.35);
-new DOMElement(famousTitle, {
-    content: 'Built with Famo.us Engine',
-    properties: {
-        'font-family': 'Limelight',
-        'text-align': 'center',
-        'padding-top': '1%',
-        'padding-bottom': '1%',
-        'color': 'black',
-        'font-size': '1.2em',
-        zIndex: 10
-    }
-});
-famousTitle.setProportionalSize(.4,.1).setAlign(0.3,0.45);
-new DOMElement(balanceTitle, {
-    content: 'Balance:',
-    properties: {
-        'text-align': 'center',
-        'padding-top': '1%',
-        'padding-bottom': '1%',
-        'color': 'black',
-        'font-size': '1.8em',
-        zIndex: 15
-    }
-});
-balanceTitle.setProportionalSize(.2,.1).setAlign(0,.58);
-new DOMElement(betTitle, {
-    content: 'Bet:',
-    properties: {
-        'text-align': 'right',
-        'padding-top': '1%',
-        'padding-bottom': '1%',
-        'color': 'black',
-        'font-size': '1.8em',
-        zIndex: 15
-    }
-});
-betTitle.setProportionalSize(.1,.1).setAlign(0,.75);
-new DOMElement(currentBetDisplay, {
-    content: '$' + currentBet,
-    properties: {
-        'text-align': 'center',
-        'padding-top': '1%',
-        'padding-bottom': '1%',
-        'color': '#447343',
-        'font-size': '1.8em',
-        zIndex: 15
-    }
-});
-currentBetDisplay.setProportionalSize(.1,.1).setAlign(.1,.75);
-new DOMElement(betIncrease, {
-    content: '↑',
-    properties: {
-        'background-color': '#0D0D0D',
-        'text-align': 'center',
-        'padding-top': '1%',
-        'padding-bottom': '1%',
-        'color': '#447343',
-        'border': 'solid #F2F2F2 3px',
-        'font-size': '2em',
-        'cursor': 'pointer',
-        zIndex: 15
-    }
-});
-betIncrease.setProportionalSize(.1,.1).setAlign(0,.85);
-betIncrease.addUIEvent('click');
-new DOMElement(betDecrease, {
-    content: '↓',
-    properties: {
-        'background-color': '#0D0D0D',
-        'text-align': 'center',
-        'padding-top': '1%',
-        'padding-bottom': '1%',
-        'color': '#447343',
-        'border': 'solid #F2F2F2 3px',
-        'font-size': '2em',
-        'cursor': 'pointer',
-        zIndex: 15
-    }
-});
-betDecrease.setProportionalSize(.1,.1).setAlign(.1,.85);
-betDecrease.addUIEvent('click');
+
 // Constructor functions
 function Card(value,suit,face) {
     this.value = value;
@@ -250,6 +137,24 @@ function createDeckArray() {
         deckArray.push(new Card(i,"S"))
     }
 }
+
+function preloadImages() {
+    for (var i=2;i<=10;i++) {
+        cardImages['club' + i] = new Image();
+        cardImages['club' + i].src = 'images/cards/' + i + '_of_clubs.png'
+        cardImages['diamonds' + i] = new Image();
+        cardImages['diamonds' + i].src = 'images/cards/' + i + '_of_diamonds.png'
+        cardImages['hearts' + i] = new Image();
+        cardImages['hearts' + i].src = 'images/cards/' + i + '_of_hearts.png'
+        cardImages['spades' + i] = new Image();
+        cardImages['spades' + i].src = 'images/cards/' + i + '_of_spades.png'
+    }
+    cardImages['heartsKing'] = new Image();
+    cardImages['heartsKing'].src = 'images/cards/king_of_hearts.png';
+}
+
+preloadImages()
+console.log('cardImages',cardImages)
 
 function shuffleDeck(deck) {
     return Underscore.shuffle(deck); 
@@ -667,6 +572,113 @@ new DOMElement(currentCash, {
         zIndex: 15
     }
 });
+
+new DOMElement(rules, {
+    content: 'Dealer draws to 16, Hits soft 17',
+    properties: {
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'white',
+        'font-size': '1.5em',
+        zIndex: 10
+    }
+});
+rules.setProportionalSize(.4,.1).setAlign(0.3,0.50);
+new DOMElement(gameTitle, {
+    content: 'Blackjack',
+    properties: {
+        'font-family': 'Limelight',
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'black',
+        'font-size': '3.5em',
+        zIndex: 6
+    }
+});
+gameTitle.setProportionalSize(.4,.1).setAlign(0.3,0.35);
+new DOMElement(famousTitle, {
+    content: 'Built with Famo.us Engine',
+    properties: {
+        'font-family': 'Limelight',
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'black',
+        'font-size': '1.2em',
+        zIndex: 10
+    }
+});
+famousTitle.setProportionalSize(.4,.1).setAlign(0.3,0.45);
+new DOMElement(balanceTitle, {
+    content: 'Balance:',
+    properties: {
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'black',
+        'font-size': '1.8em',
+        zIndex: 15
+    }
+});
+balanceTitle.setProportionalSize(.2,.1).setAlign(0,.58);
+new DOMElement(betTitle, {
+    content: 'Bet:',
+    properties: {
+        'text-align': 'right',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': 'black',
+        'font-size': '1.8em',
+        zIndex: 15
+    }
+});
+betTitle.setProportionalSize(.1,.1).setAlign(0,.75);
+new DOMElement(currentBetDisplay, {
+    content: '$' + currentBet,
+    properties: {
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': '#447343',
+        'font-size': '1.8em',
+        zIndex: 15
+    }
+});
+currentBetDisplay.setProportionalSize(.1,.1).setAlign(.1,.75);
+new DOMElement(betIncrease, {
+    content: '↑',
+    properties: {
+        'background-color': '#0D0D0D',
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': '#447343',
+        'border': 'solid #F2F2F2 3px',
+        'font-size': '2em',
+        'cursor': 'pointer',
+        zIndex: 15
+    }
+});
+betIncrease.setProportionalSize(.1,.1).setAlign(0,.85);
+betIncrease.addUIEvent('click');
+new DOMElement(betDecrease, {
+    content: '↓',
+    properties: {
+        'background-color': '#0D0D0D',
+        'text-align': 'center',
+        'padding-top': '1%',
+        'padding-bottom': '1%',
+        'color': '#447343',
+        'border': 'solid #F2F2F2 3px',
+        'font-size': '2em',
+        'cursor': 'pointer',
+        zIndex: 15
+    }
+});
+betDecrease.setProportionalSize(.1,.1).setAlign(.1,.85);
+betDecrease.addUIEvent('click');
 
 new DOMElement(messageDisplay, {
     content: "Click Deal",
