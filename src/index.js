@@ -467,9 +467,6 @@ function gameOver(result) {
     new Align(betDecrease).set(betDecreaseXOrigin,betDecreaseYOrigin)
 }
 
-function resetBoard() {
-}
-
 function resetGame() {
     //clear title
     new Align(gameTitle).set(1,1,0)
@@ -486,7 +483,6 @@ function resetGame() {
     dealerFirstCard = true;
     messageDisplay._components[2].setContent("Hit or Stay?");
     dealerHand = [];
-
     dealGame();
 }
 
